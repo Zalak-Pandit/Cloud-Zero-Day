@@ -1,6 +1,6 @@
 # CloudSentinel — Zero-Day Threat Detection Platform
 
-A production-grade cloud security platform that uses an ensemble of ML models
+A cloud security platform that uses an ensemble of ML models
 (Isolation Forest + LSTM Autoencoder + Graph Neural Network) to detect zero-day
 threats in real time across cloud infrastructure.
 
