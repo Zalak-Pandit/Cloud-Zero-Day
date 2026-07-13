@@ -29,31 +29,13 @@ Forest    Autoencoder
    ▼         ▼
 FastAPI   WebSocket    ← Response Layer
 REST API  Live Feed
-   │
-   ├── Auto-Quarantine (AWS SDK)
-   ├── Slack / PagerDuty Alert
-   └── React Dashboard
+   
 ```
 
 ---
 
-## Quick Start (Local Dev)
 
-### Prerequisites
-- Docker + Docker Compose
-- Python 3.11+
-- Node.js 20+
-
-### 1. Clone and configure
-
-```bash
-git clone https://github.com/you/cloudsentinel
-cd cloudsentinel
-cp .env.example .env
-# Edit .env — set SLACK_WEBHOOK_URL, AWS keys if you want live alerts/quarantine
-```
-
-### 2. Start the full stack with Docker Compose
+### 1. Start the full stack with Docker Compose
 
 ```bash
 docker-compose up -d
@@ -211,23 +193,11 @@ Required IAM permissions:
 ## Production Deployment (AWS EKS)
 
 ### Prerequisites
-- Terraform >= 1.6
-- AWS CLI configured
 - kubectl
 - Helm
 
-### 1. Provision infrastructure
 
-```bash
-cd infra/terraform
-terraform init
-terraform plan -var="db_password=YourSecurePassword123!"
-terraform apply
-```
-
-This creates: VPC, EKS cluster, RDS PostgreSQL, ElastiCache Redis, S3 for models.
-
-### 2. Build and push Docker images
+### 1. Build and push Docker images
 
 ```bash
 # Get ECR login
@@ -243,14 +213,6 @@ docker push YOUR_ECR_REPO/cloudsentinel-backend:latest
 docker build -t cloudsentinel-frontend ./frontend
 docker tag cloudsentinel-frontend:latest YOUR_ECR_REPO/cloudsentinel-frontend:latest
 docker push YOUR_ECR_REPO/cloudsentinel-frontend:latest
-```
-
-### 3. Upload trained models to S3
-
-```bash
-cd backend
-python train_models.py --output ./models --samples 50000
-aws s3 sync ./models s3://$(terraform -chdir=infra/terraform output -raw models_bucket)/models/
 ```
 
 ### 4. Create Kubernetes namespace and secrets
@@ -274,15 +236,6 @@ kubectl create configmap cloudsentinel-config \
   --from-literal=models-bucket="cloudsentinel-ml-models-YOUR_ACCOUNT_ID"
 ```
 
-### 5. Deploy Kafka (via Helm)
-
-```bash
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm install kafka bitnami/kafka \
-  --namespace cloudsentinel \
-  --set replicaCount=3 \
-  --set persistence.size=20Gi
-```
 
 ### 6. Deploy application
 
@@ -307,24 +260,7 @@ kubectl get ingress -n cloudsentinel   # get the ALB DNS
 
 ---
 
-## Environment Variables
 
-| Variable                 | Default                        | Description                         |
-|--------------------------|--------------------------------|-------------------------------------|
-| `DATABASE_URL`           | postgresql+asyncpg://...       | PostgreSQL connection string        |
-| `REDIS_URL`              | redis://localhost:6379/0       | Redis connection string             |
-| `KAFKA_BOOTSTRAP_SERVERS`| ["localhost:9092"]             | Kafka brokers (JSON array)          |
-| `MODEL_PATH`             | ./models                       | Directory for ML model files        |
-| `ANOMALY_THRESHOLD`      | 0.72                           | Min score to register a threat      |
-| `CRITICAL_THRESHOLD`     | 0.90                           | Score for critical + auto-quarantine|
-| `AWS_REGION`             | us-east-1                      | AWS region for EC2 quarantine       |
-| `AWS_ACCESS_KEY_ID`      | —                              | AWS credentials (optional)          |
-| `AWS_SECRET_ACCESS_KEY`  | —                              | AWS credentials (optional)          |
-| `SLACK_WEBHOOK_URL`      | —                              | Incoming webhook for Slack alerts   |
-| `PAGERDUTY_API_KEY`      | —                              | PagerDuty Events v2 routing key     |
-| `DEBUG`                  | false                          | Enable FastAPI debug mode           |
-
----
 
 ## Project Structure
 
@@ -382,7 +318,6 @@ cloudsentinel/
 
 ---
 
-## Hackathon Demo Script
 
 1. Start `docker-compose up -d`
 2. Train models: `python backend/train_models.py`
@@ -393,7 +328,7 @@ cloudsentinel/
 7. Hit **Simulate Threat** button for instant injection
 8. Show the `/api/v1/threats/stats` and `/docs` endpoints
 
-Key talking points:
+Key points:
 - **No signatures**: detects attacks with zero prior knowledge
 - **Three orthogonal models**: IF catches statistical outliers, LSTM catches behavioral deviations, GNN catches lateral movement
 - **Sub-second detection**: events scored in <5ms per event
