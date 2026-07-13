@@ -337,6 +337,3 @@ Key points:
 
 ---
 
-## License
-
-MIT
